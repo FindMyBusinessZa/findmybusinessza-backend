@@ -1,0 +1,73 @@
+<html><body><meta charset="utf-8"><style>
+.title {
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+</style><h1 class="title">backend/server.js</h1><p></p><div align="left">
+ <span style="font-size:16">const&nbsp;express&nbsp;=&nbsp;require('express');</span>
+</div><div align="left">
+ <span style="font-size:16">const&nbsp;cors&nbsp;=&nbsp;require('cors');</span>
+</div><div align="left">
+ <span style="font-size:16">const&nbsp;{&nbsp;Pool&nbsp;}&nbsp;=&nbsp;require('pg');</span>
+</div><div align="left">
+ <span style="font-size:16">const&nbsp;app&nbsp;=&nbsp;express();</span>
+</div><div align="left">
+ <span style="font-size:16">app.use(cors());</span>
+</div><div align="left">
+ <span style="font-size:16">app.use(express.json());</span>
+</div><br><div align="left">
+ <span style="font-size:16">//&nbsp;Connect&nbsp;to&nbsp;PostgreSQL&nbsp;(set&nbsp;DATABASE_URL&nbsp;on&nbsp;Render)</span>
+</div><div align="left">
+ <span style="font-size:16">const&nbsp;pool&nbsp;=&nbsp;new&nbsp;Pool({</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;connectionString:&nbsp;process.env.DATABASE_URL,</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;ssl:&nbsp;{&nbsp;rejectUnauthorized:&nbsp;false&nbsp;}</span>
+</div><div align="left">
+ <span style="font-size:16">});</span>
+</div><br><div align="left">
+ <span style="font-size:16">//&nbsp;Fetch&nbsp;businesses&nbsp;by&nbsp;province,&nbsp;town,&nbsp;category</span>
+</div><div align="left">
+ <span style="font-size:16">app.get('/api/businesses',&nbsp;async&nbsp;(req,&nbsp;res)&nbsp;=&gt;&nbsp;{</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;{&nbsp;province,&nbsp;town,&nbsp;category&nbsp;}&nbsp;=&nbsp;req.query;</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;if(!province&nbsp;||&nbsp;!town&nbsp;||&nbsp;!category)</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;res.status(400).json({error:'Missing&nbsp;parameters'});</span>
+</div><br><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;query&nbsp;=&nbsp;`</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SELECT&nbsp;b.name,&nbsp;b.address,&nbsp;b.phone,&nbsp;t.name&nbsp;AS&nbsp;town,&nbsp;p.name&nbsp;AS&nbsp;province,&nbsp;c.name&nbsp;AS&nbsp;category</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FROM&nbsp;businesses&nbsp;b</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;JOIN&nbsp;towns&nbsp;t&nbsp;ON&nbsp;b.town_id&nbsp;=&nbsp;t.id</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;JOIN&nbsp;provinces&nbsp;p&nbsp;ON&nbsp;t.province_id&nbsp;=&nbsp;p.id</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;JOIN&nbsp;categories&nbsp;c&nbsp;ON&nbsp;b.category_id&nbsp;=&nbsp;c.id</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE&nbsp;p.name=$1&nbsp;AND&nbsp;t.name=$2&nbsp;AND&nbsp;c.name=$3</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;`;</span>
+</div><br><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;try&nbsp;{</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;const&nbsp;result&nbsp;=&nbsp;await&nbsp;pool.query(query,&nbsp;[province,&nbsp;town,&nbsp;category]);</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;res.json(result.rows);</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;catch(err)&nbsp;{</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.error(err);</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;res.status(500).json({error:&nbsp;err.message});</span>
+</div><div align="left">
+ <span style="font-size:16">&nbsp;&nbsp;&nbsp;&nbsp;}</span>
+</div><div align="left">
+ <span style="font-size:16">});</span>
+</div><br><div align="left">
+ <span style="font-size:16">app.listen(3000,&nbsp;()&nbsp;=&gt;&nbsp;console.log('Backend&nbsp;running&nbsp;on&nbsp;port&nbsp;3000'));</span>
+</div><p></p></body></html>
